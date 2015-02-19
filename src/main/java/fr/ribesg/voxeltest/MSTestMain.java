@@ -17,6 +17,8 @@ import static org.lwjgl.opengl.GL15.*;
  */
 public class MSTestMain {
 
+    private static final float zoom = 12;
+
     private static byte[][]    voxels;
     private static boolean[][] image;
     private static byte[][]    cells;
@@ -38,6 +40,9 @@ public class MSTestMain {
         glOrtho(0, X.WINDOW_WIDTH, X.WINDOW_HEIGHT, 0, 1, -1);
         glMatrixMode(GL_MODELVIEW);
 
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+
         // Data init
         final int chunkSize = 8 * 8;
         final float[][] contourLinesTable = new float[][]{
@@ -58,18 +63,21 @@ public class MSTestMain {
             /* 14 */ new float[]{0, -1, -1, 0},
             /* 15 */ null
         };
-        
+
         final List<Float> vertexList = new LinkedList<>();
 
         MSTestMain.voxels = new byte[chunkSize][chunkSize];
         for (int i = 0; i < MSTestMain.voxels.length; i++) {
-            X.RANDOM.nextBytes(MSTestMain.voxels[i]);
+            for (int j = 0; j < MSTestMain.voxels.length; j++) {
+                //MSTestMain.voxels[i][j] = (byte) ((i - chunkSize / 2) * (i - chunkSize / 2) + (j - chunkSize / 2) * (j - chunkSize / 2) - (chunkSize / 2 * chunkSize / 2));
+                MSTestMain.voxels[i][j] = (byte) X.RANDOM.nextInt();
+            }
         }
 
         MSTestMain.image = new boolean[chunkSize][chunkSize];
         for (int x = 0; x < MSTestMain.voxels.length; x++) {
             for (int y = 0; y < MSTestMain.voxels.length; y++) {
-                MSTestMain.image[x][y] = MSTestMain.voxels[x][y] > 3;
+                MSTestMain.image[x][y] = Math.abs(MSTestMain.voxels[x][y]) > 64;
             }
         }
 
@@ -98,8 +106,7 @@ public class MSTestMain {
                 if (f != null) {
                     boolean isX = true;
                     for (final float v : f) {
-                        vertexList.add(2 * (isX ? x : y) + v);
-                        System.out.println(vertexList.get(vertexList.size() - 1));
+                        vertexList.add(MSTestMain.zoom * (isX ? x : y) + v * MSTestMain.zoom / 2);
                         isX = !isX;
                     }
                 }
@@ -125,6 +132,7 @@ public class MSTestMain {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         // Main loop
+        glTranslatef(10, 10, 0);
         while (!Display.isCloseRequested()) {
             glClear(GL_COLOR_BUFFER_BIT);
 
@@ -132,15 +140,32 @@ public class MSTestMain {
             glPushMatrix();
             {
                 glBindBuffer(GL_ARRAY_BUFFER, vboVertexHandle);
-                glVertexPointer(3, GL_FLOAT, 0, 0L);
+                glVertexPointer(2, GL_FLOAT, 0, 0L);
                 glBindBuffer(GL_ARRAY_BUFFER, vboColorHandle);
                 glColorPointer(3, GL_FLOAT, 0, 0L);
                 glDrawArrays(GL_LINES, 0, vertexList.size());
             }
             glPopMatrix();
 
+            glPointSize(MSTestMain.zoom / 2);
+            glBegin(GL_POINTS);
+            {
+                for (int x = 0; x < MSTestMain.voxels.length; x++) {
+                    for (int y = 0; y < MSTestMain.voxels.length; y++) {
+                        glColor4f(
+                            (Math.abs(MSTestMain.voxels[x][y]) * 2) / 255f,
+                            (255 - Math.abs(MSTestMain.voxels[x][y]) * 2) / 255f,
+                            0,
+                            .25f
+                                 );
+                        glVertex2f(MSTestMain.zoom * x, MSTestMain.zoom * y);
+                    }
+                }
+            }
+            glEnd();
+
             Display.update();
-            Display.sync(60);
+            Display.sync(10);
             Timer.updateFps();
         }
 
