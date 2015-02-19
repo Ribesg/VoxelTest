@@ -18,7 +18,7 @@ public final class X {
     public static final int    FIXED_FPS     = 60;
 
     public static final float BLOCK_SIZE = 1f;
-    public static final int   CHUNK_SIZE = 16;
+    public static final int   CHUNK_SIZE = 64;
 
     public static int     QUADS_OR_LINES = GL11.GL_QUADS;
     public static boolean USE_VBO        = false;

@@ -22,7 +22,7 @@ public class Main {
      * Program entry point.
      *
      * @param args program arguments
-     */
+     *//*
     public static void main(final String[] args) {
         new Main(args);
     }
@@ -156,4 +156,5 @@ public class Main {
         Display.destroy();
         System.exit(0);
     }
+    */
 }
