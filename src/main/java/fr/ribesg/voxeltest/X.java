@@ -11,8 +11,8 @@ public final class X {
 
     public static final Random RANDOM = new Random();
 
-    public static final int    WINDOW_WIDTH  = 775;
-    public static final int    WINDOW_HEIGHT = 775;
+    public static final int    WINDOW_WIDTH  = 768;
+    public static final int    WINDOW_HEIGHT = 768;
     public static final int    WINDOW_BITS   = 32;
     public static final String WINDOW_TITLE  = "Title";
     public static final int    FIXED_FPS     = 60;
