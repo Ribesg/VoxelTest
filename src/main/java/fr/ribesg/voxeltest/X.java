@@ -1,7 +1,5 @@
 package fr.ribesg.voxeltest;
 
-import org.lwjgl.opengl.GL11;
-
 import java.util.Random;
 
 /**
@@ -15,11 +13,162 @@ public final class X {
     public static final int    WINDOW_HEIGHT = 768;
     public static final int    WINDOW_BITS   = 32;
     public static final String WINDOW_TITLE  = "Title";
-    public static final int    FIXED_FPS     = 60;
+    public static final int    FIXED_FPS     = 120;
 
-    public static final float BLOCK_SIZE = 1f;
-    public static final int   CHUNK_SIZE = 64;
+    public static final int CHUNK_SIZE = 32;
 
-    public static int     QUADS_OR_LINES = GL11.GL_QUADS;
-    public static boolean USE_VBO        = false;
+    public static float[][] VERTICES_TABLE = new float[][]{
+            /*  0 */
+        null,
+            /*  1 */
+        new float[]{
+            -1, -1,
+            -1, 0,
+            0, -1
+        },
+            /*  2 */
+        new float[]{
+            1, -1,
+            1, 0,
+            0, -1
+        },
+            /*  3 */
+        new float[]{
+            -1, 0,
+            1, 0,
+            -1, -1,
+
+            -1, -1,
+            1, -1,
+            1, 0
+        },
+            /*  4 */
+        new float[]{
+            0, 1,
+            1, 0,
+            1, 1
+        },
+            /*  5 */
+        new float[]{
+            -1, 0,
+            0, -1,
+            -1, -1,
+
+            0, 1,
+            1, 0,
+            1, 1
+        },
+            /*  6 */
+        new float[]{
+            0, 1,
+            0, -1,
+            1, -1,
+
+            1, -1,
+            1, 1,
+            0, 1
+        },
+            /*  7 */
+        new float[]{
+            -1, 0,
+            0, 1,
+            1, -1,
+
+            -1, 0,
+            -1, -1,
+            1, -1,
+
+            0, 1,
+            1, 1,
+            1, -1
+        },
+            /*  8 */
+        new float[]{
+            0, 1,
+            -1, 0,
+            -1, 1
+        },
+            /*  9 */
+        new float[]{
+            0, -1,
+            0, 1,
+            -1, 1,
+
+            -1, 1,
+            0, -1,
+            -1, -1
+        },
+            /* 10 */
+        new float[]{
+            -1, 1,
+            -1, 0,
+            0, 1,
+
+            0, -1,
+            1, 0,
+            1, -1
+        },
+            /* 11 */
+        new float[]{
+            1, 0,
+            0, 1,
+            -1, -1,
+
+            1, 0,
+            1, -1,
+            -1, -1,
+
+            0, 1,
+            -1, 1,
+            -1, -1
+        },
+            /* 12 */
+        new float[]{
+            1, 0,
+            -1, 0,
+            -1, 1,
+
+            -1, 1,
+            1, 1,
+            1, 0
+        },
+            /* 13 */
+        new float[]{
+            0, -1,
+            1, 0,
+            -1, 1,
+
+            0, -1,
+            -1, -1,
+            -1, 1,
+
+            1, 0,
+            1, 1,
+            -1, 1
+        },
+            /* 14 */
+        new float[]{
+            0, -1,
+            -1, 0,
+            1, 1,
+
+            0, -1,
+            1, -1,
+            1, 1,
+
+            -1, 0,
+            -1, 1,
+            1, 1
+        },
+            /* 15 */
+        new float[]{
+            -1, -1,
+            -1, 1,
+            1, 1,
+
+            -1, -1,
+            1, -1,
+            1, 1
+        }
+    };
 }
