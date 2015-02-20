@@ -13,9 +13,9 @@ public final class X {
     public static final int    WINDOW_HEIGHT = 768;
     public static final int    WINDOW_BITS   = 32;
     public static final String WINDOW_TITLE  = "Title";
-    public static final int    FIXED_FPS     = 120;
+    public static final int    FIXED_FPS     = 60;
 
-    public static final int CHUNK_SIZE = 32;
+    public static final int CHUNK_SIZE = 64;
 
     public static float[][] VERTICES_TABLE = new float[][]{
             /*  0 */

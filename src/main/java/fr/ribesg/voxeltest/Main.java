@@ -1,46 +1,33 @@
 package fr.ribesg.voxeltest;
 
-import fr.ribesg.voxeltest.block.Chunk;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.util.glu.GLU;
 
 import java.nio.FloatBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 
 /**
- *
+ * @author Ribesg
  */
 public class Main {
 
-    /**
-     * Program entry point.
-     *
-     * @param args program arguments
-     *//*
+    private static byte[][]    voxels;
+    private static boolean[][] image;
+    private static byte[][]    cells;
+
+    private static int vboVertexHandle, vboColorHandle;
+    private static FloatBuffer vertexBuffer, colorBuffer;
+
     public static void main(final String[] args) {
-        new Main(args);
-    }
-
-    private final Chunk chunk;
-
-    private int vboColorHandle;
-    private int vboVertexHandle;
-
-    private Main(final String[] args) {
-        this.chunk = new Chunk();
-        this.setUp();
-        this.loop();
-        this.destroy();
-    }
-
-    private void setUp() {
-        // Display SetUp
+        // Display init
         try {
             Display.setDisplayMode(new DisplayMode(X.WINDOW_WIDTH, X.WINDOW_HEIGHT));
             Display.setTitle(X.WINDOW_TITLE);
@@ -50,111 +37,166 @@ public class Main {
             System.exit(1);
         }
 
-        // OpenGL SetUp
-        glEnable(GL_TEXTURE_2D);
-        glShadeModel(GL_SMOOTH);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClearDepth(1.0);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
-
+        // OpenGL init
         glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-
-        GLU.gluPerspective(
-            45.0f,
-            (float) X.WINDOW_WIDTH / (float) X.WINDOW_HEIGHT,
-            0.1f,
-            1000.0f);
-
+        glLoadIdentity(); // Resets any previous projection matrices
+        //glOrtho(0, X.WINDOW_WIDTH, X.WINDOW_HEIGHT, 0, 1, -1);
+        glOrtho(0, X.CHUNK_SIZE + 2, X.CHUNK_SIZE + 2, 0, 1, -1);
         glMatrixMode(GL_MODELVIEW);
-        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
-        if (X.USE_VBO) {
-            glEnableClientState(GL_VERTEX_ARRAY);
-            glEnableClientState(GL_COLOR_ARRAY);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
 
-            this.vboColorHandle = glGenBuffers();
-            this.vboVertexHandle = glGenBuffers();
+        // Data init
+        Main.voxels = new byte[X.CHUNK_SIZE][X.CHUNK_SIZE];
+        for (int i = 0; i < Main.voxels.length; i++) {
+            for (int j = 0; j < Main.voxels.length; j++) {
+                //MSTestMain.voxels[i][j] = (byte) ((i - chunkSize / 2) * (i - chunkSize / 2) + (j - chunkSize / 2) * (j - chunkSize / 2) - (chunkSize / 2 * chunkSize / 2));
+                //MSTestMain.voxels[i][j] = (byte) X.RANDOM.nextInt();
+                //MSTestMain.voxels[i][j] = i % 16 >= 8 ? (j % 16 >= 8 ? Byte.MIN_VALUE : Byte.MAX_VALUE) : (j % 16 < 8 ? Byte.MIN_VALUE : Byte.MAX_VALUE);
+                Main.voxels[i][j] = i + j + 1 >= X.CHUNK_SIZE ? Byte.MAX_VALUE : Byte.MIN_VALUE;
+            }
         }
-        // Timer SetUp
-        Timer.init();
 
-        if (X.USE_VBO) {
-            // Data SetUp
-            final FloatBuffer vertexPositionData = BufferUtils.createFloatBuffer((int) (Math.pow(X.CHUNK_SIZE, 3) * 24 * 3));
-            final FloatBuffer vertexColorData = BufferUtils.createFloatBuffer(vertexPositionData.capacity());
-            this.chunk.render(vertexPositionData, vertexColorData);
-            vertexPositionData.flip();
-            vertexColorData.flip();
-            glBindBuffer(GL_ARRAY_BUFFER, this.vboVertexHandle);
-            glBufferData(GL_ARRAY_BUFFER, vertexPositionData, GL_STATIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glBindBuffer(GL_ARRAY_BUFFER, this.vboColorHandle);
-            glBufferData(GL_ARRAY_BUFFER, vertexColorData, GL_STATIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-        }
-    }
+        int size = Main.fillVBO(X.CHUNK_SIZE);
 
-    private void loop() {
-        float d = 0f;
+        // Main loop
+        glTranslatef(1.5f, 1.5f, 0);
         while (!Display.isCloseRequested()) {
-            d = (d + .5f) % 360f;
-            this.render(d);
-            this.logic();
-            Display.update();
-            Timer.updateFps();
-            Display.sync(X.FIXED_FPS);
-        }
-    }
+            // RENDER
+            glClear(GL_COLOR_BUFFER_BIT);
 
-    private void render(final float d) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glLoadIdentity();
-        glPushMatrix();
-        glTranslatef(-X.CHUNK_SIZE / 2, -X.CHUNK_SIZE / 2, -X.CHUNK_SIZE * 3);
-        glRotatef(90f + d, 1.5f, 1.5f, 1.5f);
-        glColor3f(0.5f, 0.5f, 1.0f);
-
-        glLineWidth(2f);
-        glBegin(GL_LINES);
-        {
-            glColor3f(1, 0, 0);
-            glVertex3f(0, 0, 0);
-            glVertex3f(Float.MAX_VALUE, 0, 0);
-            glColor3f(0, 1, 0);
-            glVertex3f(0, 0, 0);
-            glVertex3f(0, Float.MAX_VALUE, 0);
-            glColor3f(0, 0, 1);
-            glVertex3f(0, 0, 0);
-            glVertex3f(0, 0, Float.MAX_VALUE);
-        }
-        glEnd();
-
-        if (X.USE_VBO) {
             glPushMatrix();
             {
-                glBindBuffer(GL_ARRAY_BUFFER, this.vboVertexHandle);
-                glVertexPointer(3, GL_FLOAT, 0, 0L);
-
-                glBindBuffer(GL_ARRAY_BUFFER, this.vboColorHandle);
+                glBindBuffer(GL_ARRAY_BUFFER, Main.vboVertexHandle);
+                glVertexPointer(2, GL_FLOAT, 0, 0L);
+                glBindBuffer(GL_ARRAY_BUFFER, Main.vboColorHandle);
                 glColorPointer(3, GL_FLOAT, 0, 0L);
-
-                glDrawArrays(X.QUADS_OR_LINES, 0, (int) (Math.pow(X.CHUNK_SIZE, 3) * 24 * 3));
+                glDrawArrays(GL_TRIANGLES, 0, size);
             }
             glPopMatrix();
-        } else {
-            this.chunk.render();
+
+            /*
+            glPointSize(1);
+            glBegin(GL_POINTS);
+            {
+                for (int x = 0; x < Main.voxels.length; x++) {
+                    for (int y = 0; y < Main.voxels.length; y++) {
+                        glColor4f(
+                            (Main.voxels[x][y] + 128) / 255f,
+                            (255 - (Main.voxels[x][y] + 128)) / 255f,
+                            0,
+                            .25f
+                                 );
+                        glVertex2f(x, y);
+                    }
+                }
+            }
+            glEnd();
+            */
+
+            // END RENDER
+            // LOGIC
+
+            final int x = (int) ((float) Mouse.getX() / X.WINDOW_WIDTH * (X.CHUNK_SIZE + 2) - 1f);
+            final int y = (int) ((float) (X.WINDOW_HEIGHT - Mouse.getY()) / X.WINDOW_HEIGHT * (X.CHUNK_SIZE + 2) - 1f);
+            if (Mouse.isButtonDown(0) || Mouse.isButtonDown(1)) {
+                final int radius = (int) Math.max(1, X.CHUNK_SIZE / 10f);
+                for (int dx = Math.max(0, x - radius); dx <= Math.min(Main.voxels.length - 1, x + radius); dx++) {
+                    for (int dy = Math.max(0, y - radius); dy <= Math.min(Main.voxels.length - 1, y + radius); dy++) {
+                        final int d = dx - x == 0 && dy - y == 0 ? Integer.MAX_VALUE : (int) (radius * radius / (double) Math.max((dx - x) * (dx - x) + (dy - y) * (dy - y), 1));
+                        if (Mouse.isButtonDown(0)) {
+                            Main.voxels[dx][dy] = (byte) Math.min(Main.voxels[dx][dy] + d, Byte.MAX_VALUE);
+                        } else {
+                            Main.voxels[dx][dy] = (byte) Math.max(Main.voxels[dx][dy] - d, Byte.MIN_VALUE);
+                        }
+                    }
+                }
+                size = Main.fillVBO(X.CHUNK_SIZE);
+            }
+            while (Keyboard.next()) {
+                if (Keyboard.getEventKeyState()) {
+                    if (Keyboard.getEventKey() == Keyboard.KEY_SPACE) {
+                        for (int i = 0; i < Main.voxels.length; i++) {
+                            X.RANDOM.nextBytes(Main.voxels[i]);
+                        }
+                        size = Main.fillVBO(X.CHUNK_SIZE);
+                    }
+                }
+            }
+
+            // END LOGIC
+
+            Display.update();
+            Display.sync(X.FIXED_FPS);
+            Timer.updateFps();
         }
-    }
 
-    private void logic() {
-        X.QUADS_OR_LINES = !Keyboard.isKeyDown(Keyboard.KEY_SPACE) ? GL_LINE_LOOP : GL_QUADS;
-    }
-
-    private void destroy() {
         Display.destroy();
         System.exit(0);
     }
-    */
+
+    private static int fillVBO(final int chunkSize) {
+        Main.image = new boolean[chunkSize][chunkSize];
+        for (int x = 0; x < Main.voxels.length; x++) {
+            for (int y = 0; y < Main.voxels.length; y++) {
+                Main.image[x][y] = Main.voxels[x][y] > 0;
+            }
+        }
+
+        Main.cells = new byte[chunkSize - 1][chunkSize - 1];
+        for (int x = 0; x < Main.cells.length; x++) {
+            for (int y = 0; y < Main.cells.length; y++) {
+                Main.cells[x][y] = 0;
+                if (Main.image[x][y]) {
+                    Main.cells[x][y] += 1;
+                }
+                if (Main.image[x + 1][y]) {
+                    Main.cells[x][y] += 2;
+                }
+                if (Main.image[x + 1][y + 1]) {
+                    Main.cells[x][y] += 4;
+                }
+                if (Main.image[x][y + 1]) {
+                    Main.cells[x][y] += 8;
+                }
+            }
+        }
+
+        final List<Float> vertexList = new LinkedList<>();
+        for (int x = 0; x < Main.cells.length; x++) {
+            for (int y = 0; y < Main.cells.length; y++) {
+                final float[] f = X.VERTICES_TABLE[Main.cells[x][y]];
+                if (f != null) {
+                    boolean isX = true;
+                    for (final float v : f) {
+                        vertexList.add((isX ? x : y) + v / 2 + .5f);
+                        isX = !isX;
+                    }
+                }
+            }
+        }
+
+        Main.vboVertexHandle = glGenBuffers();
+        Main.vboColorHandle = glGenBuffers();
+        Main.vertexBuffer = BufferUtils.createFloatBuffer(vertexList.size());
+        Main.colorBuffer = BufferUtils.createFloatBuffer(vertexList.size() / 2 * 3);
+        vertexList.forEach(Main.vertexBuffer::put);
+        final int trianglesAmount = vertexList.size() / 2 / 3;
+        System.out.println(trianglesAmount + " triangles");
+        for (int i = 0; i < vertexList.size() / 2 * 3; i++) {
+            Main.colorBuffer.put(1f);
+        }
+        Main.vertexBuffer.flip();
+        Main.colorBuffer.flip();
+
+        glBindBuffer(GL_ARRAY_BUFFER, Main.vboVertexHandle);
+        glBufferData(GL_ARRAY_BUFFER, Main.vertexBuffer, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, Main.vboColorHandle);
+        glBufferData(GL_ARRAY_BUFFER, Main.colorBuffer, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        return vertexList.size();
+    }
 }
