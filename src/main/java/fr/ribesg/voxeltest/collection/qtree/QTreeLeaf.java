@@ -1,4 +1,4 @@
-package fr.ribesg.voxeltest.old.collection.qtree;
+package fr.ribesg.voxeltest.collection.qtree;
 
 /**
  * @author Ribesg

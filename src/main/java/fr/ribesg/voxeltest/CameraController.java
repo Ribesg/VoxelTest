@@ -23,20 +23,26 @@ public final class CameraController {
         this.mouseSensitivity = mouseSensitivity;
     }
 
+    public CameraController(final float posX, final float posY, final float posZ, final float yaw, final float pitch) {
+        this(posX, posY, posZ, yaw, pitch, .05f, .05f);
+    }
+
     public CameraController() {
-        this(0, 0, 0, 0, 0, .05f, .05f);
+        this(0, 0, 0, 0, 0);
     }
 
     public void update(final float delta) {
-        // Update horizontal view angle
-        this.yaw += Mouse.getDX() * this.mouseSensitivity;
+        if (Mouse.isGrabbed()) {
+            // Update horizontal view angle
+            this.yaw += Mouse.getDX() * this.mouseSensitivity;
 
-        // Update vertical view angle
-        this.pitch -= Mouse.getDY() * this.mouseSensitivity;
-        if (this.pitch > Config.VERTICAL_FOV / 2) {
-            this.pitch = Config.VERTICAL_FOV / 2;
-        } else if (this.pitch < -Config.VERTICAL_FOV / 2) {
-            this.pitch = -Config.VERTICAL_FOV / 2;
+            // Update vertical view angle
+            this.pitch -= Mouse.getDY() * this.mouseSensitivity;
+            if (this.pitch > Config.VERTICAL_FOV / 2) {
+                this.pitch = Config.VERTICAL_FOV / 2;
+            } else if (this.pitch < -Config.VERTICAL_FOV / 2) {
+                this.pitch = -Config.VERTICAL_FOV / 2;
+            }
         }
 
         final float distance;

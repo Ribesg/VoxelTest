@@ -6,7 +6,6 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -21,28 +20,10 @@ public final class Main {
 
     private final CameraController camera;
 
-    private float[][] points;
+    private int axesHandle, axesColorHandle, axesSize;
 
     public Main() throws LWJGLException {
-        // Configuration
-        Config.SCREEN_WIDTH = 1440;
-        Config.SCREEN_HEIGHT = 900;
-        Config.SCREEN_RATIO = Config.SCREEN_WIDTH / (float) Config.SCREEN_HEIGHT;
-        Config.MAX_FPS = 120;
-        Config.VIEW_DISTANCE = 5000;
-
-        Config.HORIZONTAL_FOV = 90;
-        Config.VERTICAL_FOV = 60;
-
-        Config.KEY_SPRINT = Keyboard.KEY_LSHIFT;
-        Config.KEY_FORWARD = Keyboard.KEY_Z;
-        Config.KEY_BACK = Keyboard.KEY_S;
-        Config.KEY_LEFT = Keyboard.KEY_Q;
-        Config.KEY_RIGHT = Keyboard.KEY_D;
-        Config.KEY_UP = Keyboard.KEY_SPACE;
-        Config.KEY_DOWN = Keyboard.KEY_LCONTROL;
-
-        this.camera = new CameraController();
+        this.camera = new CameraController(-500f, -500f, -500f, -45f, 45f);
 
         this.init();
         this.loop();
@@ -61,13 +42,21 @@ public final class Main {
         glMatrixMode(GL_MODELVIEW);
         glEnable(GL_DEPTH_TEST);
 
-        // Create some points
-        this.points = new float[10000][3];
-        Arrays.stream(this.points).forEach(p -> {
-            p[0] = (Main.RANDOM.nextFloat() - 0.5f) * 250f;
-            p[1] = (Main.RANDOM.nextFloat() - 0.5f) * 250f;
-            p[2] = Main.RANDOM.nextInt(400) - 400;
-        });
+        // Draw some axes
+        final float[][] axesVertices = new float[][] {
+            new float[] {0, 0, 0}, new float[] {100000, 0, 0},
+            new float[] {0, 0, 0}, new float[] {0, 100000, 0},
+            new float[] {0, 0, 0}, new float[] {0, 0, 100000}
+        };
+        this.axesHandle = VBOHandler.createNew3D(axesVertices);
+        this.axesSize = axesVertices.length * 3;
+
+        final float[][] axesColors = new float[][] {
+            new float[] {1, 0, 0}, new float[] {1, 0, 0},
+            new float[] {0, 1, 0}, new float[] {0, 1, 0},
+            new float[] {0, 0, 1}, new float[] {0, 0, 1}
+        };
+        this.axesColorHandle = VBOHandler.createNew3D(axesColors);
 
         // Hide Mouse pointer
         Mouse.setGrabbed(true);
@@ -82,33 +71,24 @@ public final class Main {
             // Update data
             delta = Timer.getDelta();
             this.camera.update(delta);
-            this.camera.lookThrough();
+            if (Mouse.isGrabbed() && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Keyboard.isKeyDown(Keyboard.KEY_LMENU)) {
+                Mouse.setGrabbed(false);
+            } else if (!Mouse.isGrabbed() && Mouse.isButtonDown(0)) {
+                Mouse.setGrabbed(true);
+            }
 
             // Render data
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glBegin(GL_POINTS);
+            glPushMatrix();
             {
-                glColor3f(1, 1, 1);
-                Arrays.stream(this.points).forEach(p -> glVertex3f(p[0], p[1], p[2]));
+                VBOHandler.render(this.axesHandle, this.axesColorHandle, GL_LINES, this.axesSize);
             }
-            glEnd();
-            glBegin(GL_LINES);
-            {
-                glColor3f(1, 0, 0);
-                glVertex3f(0, 0, 0);
-                glVertex3f(1000, 0, 0);
-                glColor3f(0, 1, 0);
-                glVertex3f(0, 0, 0);
-                glVertex3f(0, 1000, 0);
-                glColor3f(0, 0, 1);
-                glVertex3f(0, 0, 0);
-                glVertex3f(0, 0, 1000);
-            }
-            glEnd();
+            glPopMatrix();
 
             // Update screen
-            Timer.updateFps();
+            this.camera.lookThrough();
             Display.update();
+            Timer.updateFps();
             Display.sync(Config.MAX_FPS);
         }
     }
@@ -120,6 +100,24 @@ public final class Main {
     // ##################################################################### //
 
     public static void main(final String[] args) {
+        // Configuration
+        Config.SCREEN_WIDTH = 1440;
+        Config.SCREEN_HEIGHT = 900;
+        Config.SCREEN_RATIO = Config.SCREEN_WIDTH / (float) Config.SCREEN_HEIGHT;
+        Config.MAX_FPS = 120;
+        Config.VIEW_DISTANCE = 5000;
+
+        Config.HORIZONTAL_FOV = 85;
+        Config.VERTICAL_FOV = 95;
+
+        Config.KEY_SPRINT = Keyboard.KEY_LSHIFT;
+        Config.KEY_FORWARD = Keyboard.KEY_Z;
+        Config.KEY_BACK = Keyboard.KEY_S;
+        Config.KEY_LEFT = Keyboard.KEY_Q;
+        Config.KEY_RIGHT = Keyboard.KEY_D;
+        Config.KEY_UP = Keyboard.KEY_SPACE;
+        Config.KEY_DOWN = Keyboard.KEY_LCONTROL;
+
         try {
             new Main();
         } catch (final LWJGLException e) {
