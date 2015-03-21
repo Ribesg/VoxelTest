@@ -1,4 +1,4 @@
-package fr.ribesg.voxeltest.collection.octree;
+package fr.ribesg.voxeltest.old.collection.octree;
 
 /**
  * @author Ribesg
@@ -14,13 +14,13 @@ public final class OctreeLeaf<T> extends OctreeNode<T> {
 
     @Override
     /* package */ OctreeLeaf<T> get(final double x, final double y, final double z) {
-        // TODO Check x,y,z
+        // TODO Check x,y,posZ
         return this;
     }
 
     @Override
     /* package */ void set(final double x, final double y, final double z, final T data) {
-        // TODO Check x,y,z
+        // TODO Check x,y,posZ
         this.data = data;
     }
 

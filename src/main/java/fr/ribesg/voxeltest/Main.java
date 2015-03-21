@@ -1,202 +1,125 @@
 package fr.ribesg.voxeltest;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 
-import java.nio.FloatBuffer;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Random;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.util.glu.GLU.gluPerspective;
 
 /**
  * @author Ribesg
  */
-public class Main {
+public final class Main {
 
-    private static byte[][]    voxels;
-    private static boolean[][] image;
-    private static byte[][]    cells;
+    public static final Random RANDOM = new Random();
 
-    private static int vboVertexHandle, vboColorHandle;
-    private static FloatBuffer vertexBuffer, colorBuffer;
+    private final CameraController camera;
 
-    public static void main(final String[] args) {
-        // Display init
-        try {
-            Display.setDisplayMode(new DisplayMode(X.WINDOW_WIDTH, X.WINDOW_HEIGHT));
-            Display.setTitle(X.WINDOW_TITLE);
-            Display.create();
-        } catch (final LWJGLException e) {
-            System.err.println("Display wasn't initialized correctly.");
-            System.exit(1);
-        }
+    private float[][] points;
 
-        // OpenGL init
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity(); // Resets any previous projection matrices
-        //glOrtho(0, X.WINDOW_WIDTH, X.WINDOW_HEIGHT, 0, 1, -1);
-        glOrtho(0, X.CHUNK_SIZE + 2, X.CHUNK_SIZE + 2, 0, 1, -1);
-        glMatrixMode(GL_MODELVIEW);
+    public Main() throws LWJGLException {
+        Config.SCREEN_WIDTH = 1440;
+        Config.SCREEN_HEIGHT = 900;
+        Config.MAX_FPS = 240;
+        Config.VIEW_DISTANCE = 5000;
 
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_COLOR_ARRAY);
+        Config.KEY_SPRINT = Keyboard.KEY_LSHIFT;
+        Config.KEY_FORWARD = Keyboard.KEY_Z;
+        Config.KEY_BACK = Keyboard.KEY_S;
+        Config.KEY_LEFT = Keyboard.KEY_Q;
+        Config.KEY_RIGHT = Keyboard.KEY_D;
+        Config.KEY_UP = Keyboard.KEY_SPACE;
+        Config.KEY_DOWN = Keyboard.KEY_LCONTROL;
 
-        // Data init
-        Main.voxels = new byte[X.CHUNK_SIZE][X.CHUNK_SIZE];
-        for (int i = 0; i < Main.voxels.length; i++) {
-            for (int j = 0; j < Main.voxels.length; j++) {
-                //MSTestMain.voxels[i][j] = (byte) ((i - chunkSize / 2) * (i - chunkSize / 2) + (j - chunkSize / 2) * (j - chunkSize / 2) - (chunkSize / 2 * chunkSize / 2));
-                //MSTestMain.voxels[i][j] = (byte) X.RANDOM.nextInt();
-                //MSTestMain.voxels[i][j] = i % 16 >= 8 ? (j % 16 >= 8 ? Byte.MIN_VALUE : Byte.MAX_VALUE) : (j % 16 < 8 ? Byte.MIN_VALUE : Byte.MAX_VALUE);
-                Main.voxels[i][j] = i + j + 1 >= X.CHUNK_SIZE ? Byte.MAX_VALUE : Byte.MIN_VALUE;
-            }
-        }
+        this.camera = new CameraController();
 
-        int size = Main.fillVBO(X.CHUNK_SIZE);
-
-        // Main loop
-        glTranslatef(1.5f, 1.5f, 0);
-        while (!Display.isCloseRequested()) {
-            // RENDER
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            glPushMatrix();
-            {
-                glBindBuffer(GL_ARRAY_BUFFER, Main.vboVertexHandle);
-                glVertexPointer(2, GL_FLOAT, 0, 0L);
-                glBindBuffer(GL_ARRAY_BUFFER, Main.vboColorHandle);
-                glColorPointer(3, GL_FLOAT, 0, 0L);
-                glDrawArrays(GL_TRIANGLES, 0, size);
-            }
-            glPopMatrix();
-
-            /*
-            glPointSize(1);
-            glBegin(GL_POINTS);
-            {
-                for (int x = 0; x < Main.voxels.length; x++) {
-                    for (int y = 0; y < Main.voxels.length; y++) {
-                        glColor4f(
-                            (Main.voxels[x][y] + 128) / 255f,
-                            (255 - (Main.voxels[x][y] + 128)) / 255f,
-                            0,
-                            .25f
-                                 );
-                        glVertex2f(x, y);
-                    }
-                }
-            }
-            glEnd();
-            */
-
-            // END RENDER
-            // LOGIC
-
-            final int x = (int) ((float) Mouse.getX() / X.WINDOW_WIDTH * (X.CHUNK_SIZE + 2) - 1f);
-            final int y = (int) ((float) (X.WINDOW_HEIGHT - Mouse.getY()) / X.WINDOW_HEIGHT * (X.CHUNK_SIZE + 2) - 1f);
-            if (Mouse.isButtonDown(0) || Mouse.isButtonDown(1)) {
-                final int radius = (int) Math.max(1, X.CHUNK_SIZE / 10f);
-                for (int dx = Math.max(0, x - radius); dx <= Math.min(Main.voxels.length - 1, x + radius); dx++) {
-                    for (int dy = Math.max(0, y - radius); dy <= Math.min(Main.voxels.length - 1, y + radius); dy++) {
-                        final int d = dx - x == 0 && dy - y == 0 ? Integer.MAX_VALUE : (int) (radius * radius / (double) Math.max((dx - x) * (dx - x) + (dy - y) * (dy - y), 1));
-                        if (Mouse.isButtonDown(0)) {
-                            Main.voxels[dx][dy] = (byte) Math.min(Main.voxels[dx][dy] + d, Byte.MAX_VALUE);
-                        } else {
-                            Main.voxels[dx][dy] = (byte) Math.max(Main.voxels[dx][dy] - d, Byte.MIN_VALUE);
-                        }
-                    }
-                }
-                size = Main.fillVBO(X.CHUNK_SIZE);
-            }
-            while (Keyboard.next()) {
-                if (Keyboard.getEventKeyState()) {
-                    if (Keyboard.getEventKey() == Keyboard.KEY_SPACE) {
-                        for (int i = 0; i < Main.voxels.length; i++) {
-                            X.RANDOM.nextBytes(Main.voxels[i]);
-                        }
-                        size = Main.fillVBO(X.CHUNK_SIZE);
-                    }
-                }
-            }
-
-            // END LOGIC
-
-            Display.update();
-            Display.sync(X.FIXED_FPS);
-            Timer.updateFps();
-        }
-
-        Display.destroy();
-        System.exit(0);
+        this.init();
+        this.loop();
+        this.destroy();
     }
 
-    private static int fillVBO(final int chunkSize) {
-        Main.image = new boolean[chunkSize][chunkSize];
-        for (int x = 0; x < Main.voxels.length; x++) {
-            for (int y = 0; y < Main.voxels.length; y++) {
-                Main.image[x][y] = Main.voxels[x][y] > 0;
+    private void init() throws LWJGLException {
+        // Initialize Display
+        Display.setDisplayMode(new DisplayMode(Config.SCREEN_WIDTH, Config.SCREEN_HEIGHT));
+        Display.create();
+
+        // Initialize GL View
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective((float) 60, Config.SCREEN_WIDTH / Config.SCREEN_HEIGHT, 0.001f, Config.VIEW_DISTANCE);
+        glMatrixMode(GL_MODELVIEW);
+        glEnable(GL_DEPTH_TEST);
+
+        // Create some points
+        this.points = new float[10000][3];
+        Arrays.stream(this.points).forEach(p -> {
+            p[0] = (Main.RANDOM.nextFloat() - 0.5f) * 250f;
+            p[1] = (Main.RANDOM.nextFloat() - 0.5f) * 250f;
+            p[2] = Main.RANDOM.nextInt(400) - 400;
+        });
+
+        // Hide Mouse pointer
+        Mouse.setGrabbed(true);
+
+        // Initialize Timer
+        Timer.init();
+    }
+
+    private void loop() {
+        float delta;
+        while (!Display.isCloseRequested() && !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+            // Update data
+            delta = Timer.getDelta();
+            this.camera.update(delta);
+            this.camera.lookThrough();
+
+            // Render data
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glBegin(GL_POINTS);
+            {
+                glColor3f(1, 1, 1);
+                Arrays.stream(this.points).forEach(p -> glVertex3f(p[0], p[1], p[2]));
             }
-        }
-
-        Main.cells = new byte[chunkSize - 1][chunkSize - 1];
-        for (int x = 0; x < Main.cells.length; x++) {
-            for (int y = 0; y < Main.cells.length; y++) {
-                Main.cells[x][y] = 0;
-                if (Main.image[x][y]) {
-                    Main.cells[x][y] += 1;
-                }
-                if (Main.image[x + 1][y]) {
-                    Main.cells[x][y] += 2;
-                }
-                if (Main.image[x + 1][y + 1]) {
-                    Main.cells[x][y] += 4;
-                }
-                if (Main.image[x][y + 1]) {
-                    Main.cells[x][y] += 8;
-                }
+            glEnd();
+            glBegin(GL_LINES);
+            {
+                glColor3f(1, 0, 0);
+                glVertex3f(0, 0, 0);
+                glVertex3f(1000, 0, 0);
+                glColor3f(0, 1, 0);
+                glVertex3f(0, 0, 0);
+                glVertex3f(0, 1000, 0);
+                glColor3f(0, 0, 1);
+                glVertex3f(0, 0, 0);
+                glVertex3f(0, 0, 1000);
             }
+            glEnd();
+
+            // Update screen
+            Timer.updateFps();
+            Display.update();
+            Display.sync(Config.MAX_FPS);
         }
+    }
 
-        final List<Float> vertexList = new LinkedList<>();
-        for (int x = 0; x < Main.cells.length; x++) {
-            for (int y = 0; y < Main.cells.length; y++) {
-                final float[] f = X.VERTICES_TABLE[Main.cells[x][y]];
-                if (f != null) {
-                    boolean isX = true;
-                    for (final float v : f) {
-                        vertexList.add((isX ? x : y) + v / 2 + .5f);
-                        isX = !isX;
-                    }
-                }
-            }
+    private void destroy() {
+        Display.destroy();
+    }
+
+    // ##################################################################### //
+
+    public static void main(final String[] args) {
+        try {
+            new Main();
+        } catch (final LWJGLException e) {
+            e.printStackTrace();
+            System.exit(-1);
         }
-
-        Main.vboVertexHandle = glGenBuffers();
-        Main.vboColorHandle = glGenBuffers();
-        Main.vertexBuffer = BufferUtils.createFloatBuffer(vertexList.size());
-        Main.colorBuffer = BufferUtils.createFloatBuffer(vertexList.size() / 2 * 3);
-        vertexList.forEach(Main.vertexBuffer::put);
-        final int trianglesAmount = vertexList.size() / 2 / 3;
-        System.out.println(trianglesAmount + " triangles");
-        for (int i = 0; i < vertexList.size() / 2 * 3; i++) {
-            Main.colorBuffer.put(1f);
-        }
-        Main.vertexBuffer.flip();
-        Main.colorBuffer.flip();
-
-        glBindBuffer(GL_ARRAY_BUFFER, Main.vboVertexHandle);
-        glBufferData(GL_ARRAY_BUFFER, Main.vertexBuffer, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, Main.vboColorHandle);
-        glBufferData(GL_ARRAY_BUFFER, Main.colorBuffer, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        return vertexList.size();
     }
 }

@@ -1,4 +1,4 @@
-package fr.ribesg.voxeltest.collection.octree;
+package fr.ribesg.voxeltest.old.collection.octree;
 
 /**
  * @author Ribesg

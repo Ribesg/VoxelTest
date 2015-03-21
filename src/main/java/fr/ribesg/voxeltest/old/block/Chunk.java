@@ -1,6 +1,6 @@
-package fr.ribesg.voxeltest.block;
+package fr.ribesg.voxeltest.old.block;
 
-import fr.ribesg.voxeltest.X;
+import fr.ribesg.voxeltest.old.X;
 
 /**
  * @author Ribesg

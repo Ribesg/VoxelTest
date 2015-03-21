@@ -1,4 +1,4 @@
-package fr.ribesg.voxeltest;
+package fr.ribesg.voxeltest.old;
 
 import java.util.Random;
 
