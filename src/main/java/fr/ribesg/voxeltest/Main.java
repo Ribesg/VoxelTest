@@ -24,10 +24,15 @@ public final class Main {
     private float[][] points;
 
     public Main() throws LWJGLException {
+        // Configuration
         Config.SCREEN_WIDTH = 1440;
         Config.SCREEN_HEIGHT = 900;
-        Config.MAX_FPS = 240;
+        Config.SCREEN_RATIO = Config.SCREEN_WIDTH / (float) Config.SCREEN_HEIGHT;
+        Config.MAX_FPS = 120;
         Config.VIEW_DISTANCE = 5000;
+
+        Config.HORIZONTAL_FOV = 90;
+        Config.VERTICAL_FOV = 60;
 
         Config.KEY_SPRINT = Keyboard.KEY_LSHIFT;
         Config.KEY_FORWARD = Keyboard.KEY_Z;
@@ -52,7 +57,7 @@ public final class Main {
         // Initialize GL View
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        gluPerspective((float) 60, Config.SCREEN_WIDTH / Config.SCREEN_HEIGHT, 0.001f, Config.VIEW_DISTANCE);
+        gluPerspective(Config.HORIZONTAL_FOV, Config.SCREEN_WIDTH / (float) Config.SCREEN_HEIGHT, 0.001f, Config.VIEW_DISTANCE);
         glMatrixMode(GL_MODELVIEW);
         glEnable(GL_DEPTH_TEST);
 

@@ -33,6 +33,11 @@ public final class CameraController {
 
         // Update vertical view angle
         this.pitch -= Mouse.getDY() * this.mouseSensitivity;
+        if (this.pitch > Config.VERTICAL_FOV / 2) {
+            this.pitch = Config.VERTICAL_FOV / 2;
+        } else if (this.pitch < -Config.VERTICAL_FOV / 2) {
+            this.pitch = -Config.VERTICAL_FOV / 2;
+        }
 
         final float distance;
         if (Keyboard.isKeyDown(Config.KEY_SPRINT)) {
