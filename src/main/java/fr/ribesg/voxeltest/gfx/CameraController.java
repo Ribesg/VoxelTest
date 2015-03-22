@@ -1,5 +1,6 @@
-package fr.ribesg.voxeltest;
+package fr.ribesg.voxeltest.gfx;
 
+import fr.ribesg.voxeltest.Config;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -24,7 +25,7 @@ public final class CameraController {
     }
 
     public CameraController(final float posX, final float posY, final float posZ, final float yaw, final float pitch) {
-        this(posX, posY, posZ, yaw, pitch, .05f, .05f);
+        this(posX, posY, posZ, yaw, pitch, .01f, .05f);
     }
 
     public CameraController() {

@@ -8,11 +8,14 @@ public final class OctreeInternalNode<T> extends OctreeNode<T> {
     private final int             depth;
     private final OctreeNode<T>[] nodes;
 
+    private byte childrenAmount;
+
     @SuppressWarnings("unchecked")
     /* package */ OctreeInternalNode(final Octree<T> octree, final double centerX, final double centerY, final double centerZ, final int depth) {
         super(octree, centerX, centerY, centerZ);
         this.depth = depth;
         this.nodes = new OctreeNode[8];
+        this.childrenAmount = 0;
     }
 
     /* package */ OctreeNode<T> createNode(final int i) {
@@ -23,7 +26,7 @@ public final class OctreeInternalNode<T> extends OctreeNode<T> {
 
         // Compute center of node
         final double centerX, centerY, centerZ;
-        final double diff = this.octree.getRadius() / (2 << (this.depth + 1));
+        final double diff = this.octree.getRadius() / Math.pow(2, this.depth + 1);
         switch (i) {
             case Octree.TOP_NORTH_WEST:
                 centerX = this.centerX - diff;
@@ -77,6 +80,8 @@ public final class OctreeInternalNode<T> extends OctreeNode<T> {
             this.nodes[i] = new OctreeInternalNode<>(this.octree, centerX, centerY, centerZ, this.depth + 1);
         }
 
+        ++this.childrenAmount;
+
         // Return built node
         return this.nodes[i];
     }
@@ -115,12 +120,38 @@ public final class OctreeInternalNode<T> extends OctreeNode<T> {
 
     @Override
     /* package */ OctreeLeaf<T> get(final double x, final double y, final double z) {
-        return this.nodes[this.select(x, y, z)].get(x, y, z);
+        final OctreeNode<T> node = this.nodes[this.select(x, y, z)];
+        return node == null ? null : node.get(x, y, z);
     }
 
     @Override
     /* package */ void set(final double x, final double y, final double z, final T data) {
-        this.nodes[this.select(x, y, z)].set(x, y, z, data);
+        final int loc = this.select(x, y, z);
+        OctreeNode<T> node = this.nodes[loc];
+        if (node == null) {
+            node = this.createNode(loc);
+        }
+        node.set(x, y, z, data);
+    }
+
+    @Override
+    /* package */ void unset(final double x, final double y, final double z) {
+        final int loc = this.select(x, y, z);
+        final OctreeNode<T> node = this.nodes[loc];
+        if (node != null) {
+            node.unset(x, y, z);
+            if (!node.hasChildren()) {
+                this.nodes[loc] = null;
+                --this.childrenAmount;
+            }
+        } else {
+            throw new IllegalArgumentException("Nothing was set at <" + x + ';' + y + ';' + z + '>');
+        }
+    }
+
+    @Override
+    /* package */ boolean hasChildren() {
+        return this.childrenAmount > 0;
     }
 
     /* package */ OctreeNode<T> getNode(final int i) {

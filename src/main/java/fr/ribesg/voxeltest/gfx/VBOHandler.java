@@ -1,4 +1,4 @@
-package fr.ribesg.voxeltest;
+package fr.ribesg.voxeltest.gfx;
 
 import org.lwjgl.BufferUtils;
 
@@ -34,9 +34,10 @@ public final class VBOHandler {
         return handle;
     }
 
-    public static int createNew3D(final float[][] values) {
+    public static int createNew3D(final float[]... values) {
+        final int totalSize = Arrays.stream(values).mapToInt(v -> v.length).sum();
         final int handle = glGenBuffers();
-        final FloatBuffer buffer = BufferUtils.createFloatBuffer(values.length * 3);
+        final FloatBuffer buffer = BufferUtils.createFloatBuffer(totalSize);
         Arrays.stream(values).forEachOrdered(buffer::put);
         buffer.flip();
         glBindBuffer(GL_ARRAY_BUFFER, handle);

@@ -21,6 +21,12 @@ public abstract class OctreeNode<T> {
 
     /* package */ abstract void set(final double x, final double y, final double z, final T data);
 
+    /* package */ abstract void unset(final double x, final double y, final double z);
+
+    /* package */ boolean hasChildren() {
+        return false;
+    }
+
     public double getCenterX() {
         return this.centerX;
     }

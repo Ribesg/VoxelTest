@@ -47,6 +47,10 @@ public final class Octree<T> {
         this.root.set(x, y, z, data);
     }
 
+    public void unset(final double x, final double y, final double z) {
+        this.root.unset(x, y, z);
+    }
+
     /* package */ int getMaxDepth() {
         return this.maxDepth;
     }
